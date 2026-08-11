@@ -22,7 +22,7 @@ Crea un type alias Actress che oltre a tutte le proprietà di Person, aggiunge l
 
 
 ## 📌 Milestone 3
-Crea una funzione getActress che, dato un `id`, effettua una chiamata a:
+Crea una funzione `getActress` che, dato un `id`, effettua una chiamata a:
 
 `GET /actresses/:id`
 
