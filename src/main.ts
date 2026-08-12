@@ -42,7 +42,8 @@ type Actor = Person & {
 };
 
 function isPerson(dati: unknown): dati is Person {
-  typeof dati === "object" &&
+  return (
+    typeof dati === "object" &&
     dati !== null &&
     "id" in dati &&
     typeof dati.id === "number" &&
@@ -50,12 +51,14 @@ function isPerson(dati: unknown): dati is Person {
     typeof dati.name === "string" &&
     "birth_year" in dati &&
     typeof dati.birth_year === "number" &&
-    "death_year" in dati &&
-    typeof dati.death_year === "number" &&
+    (!("death_year" in dati) ||
+      typeof dati.death_year === "number" ||
+      dati.death_year === null) &&
     "biography" in dati &&
     typeof dati.biography === "string" &&
     "image" in dati &&
-    typeof dati.image === "string";
+    typeof dati.image === "string"
+  );
 }
 
 function isActress(dati: unknown): dati is Actress {
@@ -159,7 +162,7 @@ async function getActor(id: number): Promise<Actor | null> {
     if (!isActor(dati)) {
       throw new Error("Formato dati non valido");
     }
-    return dati
+    return dati;
   } catch (error) {
     if (error instanceof Error) {
       console.error("Errore durante il recuperto dell'attore", error);
@@ -173,9 +176,9 @@ async function getActor(id: number): Promise<Actor | null> {
 async function getAllActors(): Promise<Actor[]> {
   try {
     const response = await fetch(`http://localhost:3333/actor`);
-    const dati: unknown = await response.json()
-    if(!(dati instanceof Array)) {
-      throw new Error("Formato dati non valido")
+    const dati: unknown = await response.json();
+    if (!(dati instanceof Array)) {
+      throw new Error("Formato dati non valido");
     }
     const validActors: Actor[] = dati.filter(isActor);
     return validActors;
@@ -217,11 +220,14 @@ function updateActor(actor: Actor, updates: Partial<Actor>): Actor {
 }
 
 async function createRandomCouple(): Promise<[Actress, Actor] | null> {
-  const [actresses, actors] = await Promise.all([getAllActresses(), getAllActors()])
-  if(actresses.length === 0 || actors.length === 0) {
+  const [actresses, actors] = await Promise.all([
+    getAllActresses(),
+    getAllActors(),
+  ]);
+  if (actresses.length === 0 || actors.length === 0) {
     return null;
   }
-  const randomActress = actresses[Math.floor(Math.random() * actresses.length)]
-  const randomActor = actors[Math.floor(Math.random() * actors.length)]
-  return [randomActress, randomActor]
+  const randomActress = actresses[Math.floor(Math.random() * actresses.length)];
+  const randomActor = actors[Math.floor(Math.random() * actors.length)];
+  return [randomActress, randomActor];
 }
