@@ -26,9 +26,23 @@ type Actress = Person & {
   nationality: ActressNationality;
 };
 
-function isActress(dati: unknown): dati is Actress {
-  return (
-    typeof dati === "object" &&
+type ActorNationality =
+  | ActressNationality
+  | "Scottish"
+  | "New Zealand"
+  | "Hong Kong"
+  | "German"
+  | "Canadian"
+  | "Irish";
+
+type Actor = Person & {
+  knwon_for: [string, string, string];
+  awards: [string] | [string, string];
+  nationality: ActorNationality;
+};
+
+function isPerson(dati: unknown): dati is Person {
+  typeof dati === "object" &&
     dati !== null &&
     "id" in dati &&
     typeof dati.id === "number" &&
@@ -41,7 +55,28 @@ function isActress(dati: unknown): dati is Actress {
     "biography" in dati &&
     typeof dati.biography === "string" &&
     "image" in dati &&
-    typeof dati.image === "string" &&
+    typeof dati.image === "string";
+}
+
+function isActress(dati: unknown): dati is Actress {
+  return (
+    isPerson(dati) &&
+    "known_for" in dati &&
+    dati.known_for instanceof Array &&
+    dati.known_for.length === 3 &&
+    dati.known_for.every((m) => typeof m === "string") &&
+    "awards" in dati &&
+    dati.awards instanceof Array &&
+    (dati.awards.length === 1 || dati.awards.length === 2) &&
+    dati.awards.every((a) => typeof a === "string") &&
+    "nationality" in dati &&
+    typeof dati.nationality === "string"
+  );
+}
+
+function isActor(dati: unknown): dati is Actor {
+  return (
+    isPerson(dati) &&
     "most_famous_movies" in dati &&
     dati.most_famous_movies instanceof Array &&
     dati.most_famous_movies.length === 3 &&
@@ -108,11 +143,75 @@ function createActress(data: Omit<Actress, "id">): Actress {
   return { ...data, id: Math.floor(Math.random() * 1000) };
 }
 
-function updateActress(actress: Actress, updates: Partial<Actress>): Actress{
+function updateActress(actress: Actress, updates: Partial<Actress>): Actress {
   return {
-    ...actress, 
+    ...actress,
     ...updates,
-    id: actress.id, 
-    name: actress.name
+    id: actress.id,
+    name: actress.name,
+  };
+}
+
+async function getActor(id: number): Promise<Actor | null> {
+  try {
+    const response = await fetch(`http://localhost:3333/actor/${id}`);
+    const dati: unknown = await response.json();
+    if (!isActor(dati)) {
+      throw new Error("Formato dati non valido");
+    }
+    return dati
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Errore durante il recuperto dell'attore", error);
+    } else {
+      console.error("Errore sconosciuto", error);
+    }
+    return null;
   }
+}
+
+async function getAllActors(): Promise<Actor[]> {
+  try {
+    const response = await fetch(`http://localhost:3333/actor`);
+    const dati: unknown = await response.json()
+    if(!(dati instanceof Array)) {
+      throw new Error("Formato dati non valido")
+    }
+    const validActors: Actor[] = dati.filter(isActor);
+    return validActors;
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Errore durante il recuperto degli attori", error);
+    } else {
+      console.error("Errore sconosciuto", error);
+    }
+    return [];
+  }
+}
+
+async function getActors(ids: number[]): Promise<(Actor | null)[]> {
+  try {
+    const promises = ids.map((id) => getActor(id));
+    return await Promise.all(promises);
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Errore durante il recuperto degli attori", error);
+    } else {
+      console.error("Errore sconosciuto", error);
+    }
+    return [];
+  }
+}
+
+function createActor(data: Omit<Actor, "id">): Actor {
+  return { ...data, id: Math.floor(Math.random() * 1000) };
+}
+
+function updateActor(actor: Actor, updates: Partial<Actor>): Actor {
+  return {
+    ...actor,
+    ...updates,
+    id: actor.id,
+    name: actor.name,
+  };
 }
